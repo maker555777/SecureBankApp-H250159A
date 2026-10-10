@@ -2,10 +2,7 @@ package bank.model;
 
 import bank.exception.InvalidRecordException;
 
-/**
- * A login. Only the salt and the HASH of the password live here;
- * the real password is never stored (hashing is done in Step 3).
- */
+/** User login details and failed-attempt state. */
 public final class User implements Storable {
 
     public static final int MAX_FAILED_ATTEMPTS = 3;
@@ -29,7 +26,7 @@ public final class User implements Storable {
         this.locked = locked;
     }
 
-    /** Called after every wrong password; locks the user on the 3rd miss. */
+    /** Record a failed login and lock the user at the attempt limit. */
     public void registerFailedAttempt() {
         failedAttempts++;
         if (failedAttempts >= MAX_FAILED_ATTEMPTS) {

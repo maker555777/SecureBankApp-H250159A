@@ -30,25 +30,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
-/**
- * A self-contained test run: no libraries needed.
- *
- *     java -cp out bank.SelfTest
- *
- * Everything happens in a temporary folder, so your real data files are never
- * touched. Exit code is 0 when every check passes, 1 otherwise.
- */
+/** Runs the project's checks without external test libraries. */
 public final class SelfTest {
 
     private static int passed = 0;
     private static int failed = 0;
 
-    /** A piece of code that is allowed to throw. */
+        /** Test group that may throw an exception. */
     private interface Action {
         void run() throws Exception;
     }
 
-    /** The pieces of a bank "installation", rebuilt from disk to simulate a restart. */
+        /** Services backed by one data directory. */
     private record Env(DataStore store, AuditLogger audit, AuthService auth, BankService bank) {
         static Env open(Path dir) throws BankException {
             DataStore store = new DataStore(dir);
@@ -80,9 +73,7 @@ public final class SelfTest {
         System.exit(failed == 0 ? 0 : 1);
     }
 
-    // ------------------------------------------------------------------
-    //  1. Account rules (model package)
-    // ------------------------------------------------------------------
+        // Account rules
     private static void accountRules() throws Exception {
         section("Account rules");
 
@@ -115,9 +106,7 @@ public final class SelfTest {
         check("Account number is masked for display", savings.getMaskedNumber().equals("******7897"));
     }
 
-    // ------------------------------------------------------------------
-    //  2. Saving to and loading from text lines
-    // ------------------------------------------------------------------
+        // File records
     private static void recordsAndCorruption() throws Exception {
         section("File records");
 
@@ -148,9 +137,7 @@ public final class SelfTest {
                 () -> Transaction.fromRecord("TXN-1|1234567897|DEPOSIT|1.00|1.00|not-a-date"));
     }
 
-    // ------------------------------------------------------------------
-    //  3. Password hashing
-    // ------------------------------------------------------------------
+        // Password hashing
     private static void passwordHashing() {
         section("Password hashing");
 
@@ -168,9 +155,7 @@ public final class SelfTest {
                 !PasswordHasher.matches("x".toCharArray(), "!!!", "???"));
     }
 
-    // ------------------------------------------------------------------
-    //  4. Input validation
-    // ------------------------------------------------------------------
+        // Input validation
     private static void inputValidation() throws Exception {
         section("Input validation");
 
@@ -215,9 +200,7 @@ public final class SelfTest {
                 () -> InputValidator.menuChoice("x", 5));
     }
 
-    // ------------------------------------------------------------------
-    //  5. Audit log
-    // ------------------------------------------------------------------
+        // Audit log
     private static void auditLog(Path root) throws Exception {
         section("Audit log");
 
@@ -231,9 +214,7 @@ public final class SelfTest {
                 lines.stream().allMatch(l -> l.split("\\|", -1).length == 4));
     }
 
-    // ------------------------------------------------------------------
-    //  6. Storage
-    // ------------------------------------------------------------------
+        // Storage
     private static void storage(Path root) throws Exception {
         section("Data files");
 
@@ -281,9 +262,7 @@ public final class SelfTest {
                 restarted::loadAccounts);
     }
 
-    // ------------------------------------------------------------------
-    //  7. Registration and login
-    // ------------------------------------------------------------------
+        // Registration and login
     private static void authentication(Path root) throws Exception {
         section("Registration and login");
 
@@ -322,9 +301,7 @@ public final class SelfTest {
                 restarted.auth().login("sam_02", "Hunter2pass".toCharArray()) != null);
     }
 
-    // ------------------------------------------------------------------
-    //  8. Banking operations
-    // ------------------------------------------------------------------
+        // Banking operations
     private static void banking(Path root) throws Exception {
         section("Banking operations");
 
@@ -373,7 +350,7 @@ public final class SelfTest {
         check("History is still there after a restart",
                 restarted.bank().recentTransactions(sam, number, 10).size() == 2);
 
-        // Break the disk on purpose: swap the data folder for an ordinary file.
+        // Replace the data folder with a file to simulate a failed write.
         System.out.println("  (next: the disk is broken on purpose, so a 'could not write' warning is expected)");
         Path backup = root.resolve("bank-backup");
         Files.move(dir, backup);
@@ -386,14 +363,9 @@ public final class SelfTest {
         Files.move(backup, dir);
     }
 
-    // ------------------------------------------------------------------
-    //  small helpers
-    // ------------------------------------------------------------------
+        // Test helpers
 
-    /**
-     * Runs one group of checks. If something unexpected blows up half way,
-     * that is reported as a FAIL and the other groups still run.
-     */
+        /** Run a test group and report unexpected exceptions as failures. */
     private static void run(String groupName, Action group) {
         try {
             group.run();
@@ -422,7 +394,7 @@ public final class SelfTest {
         }
     }
 
-    /** Passes only when the action throws exactly this kind of exception. */
+        /** Pass if the action throws the expected exception type. */
     private static void refuses(String name, Class<? extends Exception> expected, Action action) {
         try {
             action.run();
@@ -432,7 +404,7 @@ public final class SelfTest {
         }
     }
 
-    /** The message of whatever the action throws, or null if it did not throw. */
+        /** Return the exception message, or null if the action succeeds. */
     private static String messageOf(Action action) {
         try {
             action.run();

@@ -8,13 +8,7 @@ import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.time.LocalDateTime;
 
-/**
- * Append-only record of security-relevant events, so you can answer
- * "who did what, and when" after the fact.
- *
- * What it must never contain: passwords, hashes, or full account numbers.
- * Callers pass the masked number (Account.getMaskedNumber()).
- */
+/** Writes security and transaction events to an append-only log. */
 public final class AuditLogger {
 
     public enum Event {
@@ -51,12 +45,12 @@ public final class AuditLogger {
                     StandardOpenOption.CREATE, StandardOpenOption.APPEND);
             restrictToOwner(logFile);
         } catch (IOException e) {
-            // A broken log must not crash the bank, but it must not be silent either.
+            // Logging failures should not interrupt a banking operation.
             System.err.println("Warning: could not write to the audit log.");
         }
     }
 
-    /** Owner-only access (like chmod 600) where the file system supports it; skipped on Windows. */
+    /** Restrict access to the owner where POSIX permissions are available. */
     private static void restrictToOwner(Path file) {
         try {
             Files.setPosixFilePermissions(file, PosixFilePermissions.fromString("rw-------"));
@@ -65,11 +59,7 @@ public final class AuditLogger {
         }
     }
 
-    /**
-     * Stops "log injection": if someone typed a username containing a line
-     * break, they could forge an extra fake log entry. We flatten anything
-     * that could start a new line or fake a column.
-     */
+    /** Keep user-provided values on one line and within the expected columns. */
     private static String clean(String text) {
         if (text == null || text.isEmpty()) {
             return "-";

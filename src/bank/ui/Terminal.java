@@ -7,7 +7,7 @@ import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 
-/** Reads what the user types. Passwords are read without echoing them back when the terminal allows it. */
+/** Reads console input, hiding passwords when supported by the terminal. */
 final class Terminal {
 
     private final PrintStream out;
@@ -34,11 +34,7 @@ final class Terminal {
         }
     }
 
-    /**
-     * Real terminals: the typed characters are hidden. IDE consoles cannot hide
-     * input, so there we warn once and read normally. The caller must wipe the
-     * returned array when it is finished with it.
-     */
+    /** The caller is responsible for clearing the returned password array. */
     char[] readPassword(String prompt) {
         if (console != null) {
             char[] password = console.readPassword("%s", prompt);

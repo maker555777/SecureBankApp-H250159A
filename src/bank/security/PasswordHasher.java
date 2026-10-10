@@ -7,17 +7,7 @@ import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.util.Base64;
 
-/**
- * Turns a password into a salted PBKDF2 hash and checks passwords against one.
- *
- * Why not plain SHA-256? It is built to be fast, which helps an attacker
- * guess billions of passwords a second. PBKDF2 repeats the work hundreds of
- * thousands of times, so every guess is expensive. The random salt means two
- * users with the same password still get different hashes.
- *
- * Passwords are handled as char[] (not String) so they can be wiped from
- * memory straight after use.
- */
+/** Creates salted PBKDF2 hashes and verifies login attempts. Callers clear password arrays. */
 public final class PasswordHasher {
 
     private static final String ALGORITHM = "PBKDF2WithHmacSHA256";
@@ -27,12 +17,12 @@ public final class PasswordHasher {
 
     private static final SecureRandom RANDOM = new SecureRandom();
 
-    /** Both values are Base64 text so they fit on one line of users.txt. */
+    /** Salt and hash encoded for storage in users.txt. */
     public record HashedPassword(String salt, String hash) { }
 
     private PasswordHasher() { }
 
-    /** New password: generates a fresh random salt. */
+    /** Hash a new password with a fresh salt. */
     public static HashedPassword hash(char[] password) {
         byte[] salt = new byte[SALT_BYTES];
         RANDOM.nextBytes(salt);
@@ -40,11 +30,7 @@ public final class PasswordHasher {
         return new HashedPassword(encode(salt), encode(hash));
     }
 
-    /**
-     * Login attempt: re-hash with the stored salt and compare.
-     * MessageDigest.isEqual takes the same time whether the first byte or the
-     * last byte differs, so timing can't be used to guess the hash.
-     */
+    /** Verify a password using the stored salt. */
     public static boolean matches(char[] password, String saltBase64, String expectedHashBase64) {
         try {
             byte[] salt = Base64.getDecoder().decode(saltBase64);
@@ -56,11 +42,7 @@ public final class PasswordHasher {
         }
     }
 
-    /**
-     * Used when the username does not exist. Doing the same amount of work
-     * means "unknown user" and "wrong password" take equally long to answer,
-     * so an attacker can't use response time to find real usernames.
-     */
+    /** Do the hashing work for a login attempt with an unknown username. */
     public static void spendSameTimeAsRealCheck(char[] password) {
         derive(password, new byte[SALT_BYTES]);
     }

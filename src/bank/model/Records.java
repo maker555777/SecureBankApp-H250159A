@@ -2,7 +2,7 @@ package bank.model;
 
 import bank.exception.InvalidRecordException;
 
-/** Small helper so every class parses its file line the same careful way. */
+/** Helpers for parsing pipe-separated records. */
 final class Records {
     static final String SEPARATOR = "|";
 
@@ -12,7 +12,7 @@ final class Records {
         if (line == null || line.isBlank()) {
             throw new InvalidRecordException("Empty record");
         }
-        // -1 keeps trailing empty fields so a damaged line is caught, not silently shortened
+        // Keep trailing empty fields so malformed records fail the field-count check.
         String[] parts = line.split("\\|", -1);
         if (parts.length != expectedFields) {
             throw new InvalidRecordException("Record has " + parts.length

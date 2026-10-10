@@ -22,24 +22,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Reads and writes the three text files that hold all the bank's data:
- *
- *   users.txt         one line per login
- *   accounts.txt      one line per account
- *   transactions.txt  one line per deposit or withdrawal (append-only)
- *
- * Two safety ideas run through this class:
- *
- *  1. SAFE SAVING. users.txt and accounts.txt are never edited in place.
- *     We write a complete new copy to a temporary file and then rename it over
- *     the old one. A rename is all-or-nothing, so if the power dies half way
- *     the old file is still intact instead of a half-written mess.
- *
- *  2. FAIL LOUDLY ON DAMAGE. If a line is corrupted or has been edited by hand,
- *     we refuse to start and say which file and line. Quietly skipping it
- *     would mean the next save silently deletes that record for good.
- */
+/** Reads and writes users, accounts and transaction records. */
 public final class DataStore {
 
     private static final String USERS_HEADER =
@@ -103,7 +86,7 @@ public final class DataStore {
         return readAll(transactionsFile, Transaction::fromRecord);
     }
 
-    /** History only ever grows, so we add one line to the end instead of rewriting the file. */
+    /** Add a transaction to the end of the history file. */
     public void appendTransaction(Transaction transaction) throws BankException {
         try {
             Files.createDirectories(directory);
@@ -122,13 +105,13 @@ public final class DataStore {
 
     // ---------------- shared helpers ----------------
 
-    /** Turns one line of text into an object; each model class supplies its own. */
+    /** Parses one stored record. */
     @FunctionalInterface
     private interface RecordParser<T> {
         T parse(String line) throws InvalidRecordException;
     }
 
-    /** A missing file just means "first run": there is nothing to load yet. */
+    /** A missing file is treated as an empty store. */
     private <T> List<T> readAll(Path file, RecordParser<T> parser) throws BankException {
         List<T> items = new ArrayList<>();
         if (!Files.exists(file)) {
@@ -148,7 +131,7 @@ public final class DataStore {
             try {
                 items.add(parser.parse(text));
             } catch (InvalidRecordException e) {
-                // Say where the damage is, but never echo the line itself (it may hold a hash).
+                // Do not include the record text; user records contain password hashes.
                 throw new InvalidRecordException(
                         file.getFileName() + " line " + (i + 1) + ": " + e.getMessage());
             }
@@ -185,11 +168,7 @@ public final class DataStore {
         }
     }
 
-    /**
-     * On Linux/Mac make the file readable and writable by its owner only
-     * (like chmod 600), so other users on the machine can't read the hashes.
-     * On Windows this call isn't supported and is simply skipped.
-     */
+    /** Restrict access to the file owner where POSIX permissions are available. */
     private static void restrictToOwner(Path file) {
         try {
             Files.setPosixFilePermissions(file, PosixFilePermissions.fromString("rw-------"));

@@ -15,13 +15,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 
-/**
- * Entry point. Run it from the project folder so it finds the data folder:
- *
- *     java -cp out bank.Main
- *
- * Options:  --ascii   draw boxes with plain characters (for terminals that show junk)
- */
+/** Starts the console application. Use --ascii if box characters do not display correctly. */
 public final class Main {
 
     private static final int DEFAULT_IDLE_SECONDS = 120;
@@ -31,7 +25,7 @@ public final class Main {
     public static void main(String[] args) {
         boolean ascii = Arrays.asList(args).contains("--ascii");
 
-        // Always write UTF-8 so the box characters look right regardless of the system locale.
+        // Keep the terminal output consistent across system locales.
         PrintStream out = new PrintStream(new FileOutputStream(FileDescriptor.out), true, StandardCharsets.UTF_8);
 
         Path dataDir = Paths.get(System.getProperty("bank.data", "data")).toAbsolutePath();
@@ -44,7 +38,7 @@ public final class Main {
             BankService bank = new BankService(store, audit);
             new ConsoleUI(auth, bank, out, ascii, idleSeconds).run(dataDir.toString());
         } catch (BankException e) {
-            // Corrupt or unreadable data: refuse to start rather than risk overwriting it.
+            // Do not start if existing data could not be read safely.
             out.println("The bank could not start: " + e.getMessage());
             out.println("Please check the files in " + dataDir);
             System.exit(1);

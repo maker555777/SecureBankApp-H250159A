@@ -8,10 +8,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 
-/**
- * One line of an account's history. Immutable on purpose: once a
- * transaction exists nobody can change the amount or the time.
- */
+/** An immutable account transaction. */
 public final class Transaction implements Storable {
 
     private static final SecureRandom RANDOM = new SecureRandom();
@@ -23,7 +20,7 @@ public final class Transaction implements Storable {
     private final BigDecimal balanceAfter;
     private final LocalDateTime timestamp;
 
-    /** Creates a brand-new transaction stamped with the current time. */
+    /** Create a transaction with the current timestamp. */
     public Transaction(String accountNumber, TransactionType type,
                        BigDecimal amount, BigDecimal balanceAfter) {
         this(newId(), accountNumber, type, amount, balanceAfter,
@@ -40,7 +37,7 @@ public final class Transaction implements Storable {
         this.timestamp = timestamp;
     }
 
-    /** Reference looks like TXN-20261010-3FA29C (date + 6 random hex digits). */
+    /** Generate a reference using the date and a random suffix. */
     private static String newId() {
         String date = LocalDateTime.now().format(DateTimeFormatter.BASIC_ISO_DATE);
         return String.format("TXN-%s-%06X", date, RANDOM.nextInt(0x1000000));
@@ -57,7 +54,7 @@ public final class Transaction implements Storable {
                     new BigDecimal(p[4]),
                     LocalDateTime.parse(p[5]));
         } catch (IllegalArgumentException | DateTimeParseException e) {
-            // NumberFormatException is an IllegalArgumentException too
+            // NumberFormatException is a subclass of IllegalArgumentException.
             throw new InvalidRecordException("Bad transaction record");
         }
     }

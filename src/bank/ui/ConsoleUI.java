@@ -20,22 +20,18 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
-/**
- * The screens and menus. This class only talks to the user; every rule
- * (validation, ownership, limits, saving) lives in the service classes, so a
- * mistake in the menus can never bypass the security checks.
- */
+/** Console screens and menus. Banking rules are handled by the service classes. */
 public final class ConsoleUI {
 
     private static final String BANK_NAME = "H I T   T R U S T   B A N K";
     private static final DateTimeFormatter STAMP = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
-    /** Thrown inside a session when the user has been idle for too long. */
+    /** Signals that the current session has expired. */
     private static final class SessionExpiredException extends RuntimeException {
         private static final long serialVersionUID = 1L;
     }
 
-    /** One signed-in visit. Remembers when the user last did something. */
+    /** Tracks the signed-in user and session timeout. */
     private static final class Session {
         final User user;
         private final long timeoutNanos;

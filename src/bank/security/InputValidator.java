@@ -5,11 +5,7 @@ import bank.exception.InvalidInputException;
 import java.math.BigDecimal;
 import java.util.regex.Pattern;
 
-/**
- * Every rule about what the user may type lives here, in one place.
- * The golden rule is "allow-list": describe what IS acceptable and reject
- * the rest, instead of trying to list every bad thing.
- */
+/** Validates values entered in the console. */
 public final class InputValidator {
 
     private static final Pattern USERNAME = Pattern.compile("[A-Za-z0-9_]{4,20}");
@@ -21,11 +17,7 @@ public final class InputValidator {
 
     private InputValidator() { }
 
-    /**
-     * 4-20 letters, digits or underscore. Because the pipe character is not in
-     * that list, a username can never break the '|' separated data files.
-     * Returned in lower case so "Deon" and "deon" are the same user.
-     */
+    /** Normalize usernames to lower case before storing or looking them up. */
     public static String username(String input) throws InvalidInputException {
         String value = input == null ? "" : input.trim();
         if (!USERNAME.matcher(value).matches()) {
@@ -35,7 +27,7 @@ public final class InputValidator {
         return value.toLowerCase();
     }
 
-    /** For creating a password: enforces the strength rules. */
+    /** Check password requirements for registration. */
     public static void newPassword(char[] password, String username) throws InvalidInputException {
         if (password == null || password.length < MIN_PASSWORD_LENGTH
                 || password.length > MAX_PASSWORD_LENGTH) {
@@ -56,17 +48,14 @@ public final class InputValidator {
         }
     }
 
-    /**
-     * For logging in: only a sanity check on length. Strength rules are NOT
-     * applied here, otherwise a failed login would reveal what the rules are.
-     */
+    /** Check only the length at login; registration rules do not apply here. */
     public static void loginPassword(char[] password) throws InvalidInputException {
         if (password == null || password.length == 0 || password.length > MAX_PASSWORD_LENGTH) {
             throw new InvalidInputException("Invalid username or password.");
         }
     }
 
-    /** Typed money: digits with an optional dot and at most 2 decimals, no signs, no letters. */
+    /** Parse a positive amount with up to two decimal places. */
     public static BigDecimal amount(String input) throws InvalidInputException {
         String value = input == null ? "" : input.trim();
         if (!AMOUNT.matcher(value).matches()) {
@@ -80,7 +69,7 @@ public final class InputValidator {
         return result;
     }
 
-    /** 10 digits and a correct check digit, so a mistyped number is caught early. */
+    /** Check the account number format and its Luhn digit. */
     public static String accountNumber(String input) throws InvalidInputException {
         String value = input == null ? "" : input.trim();
         if (!ACCOUNT_NUMBER.matcher(value).matches()
@@ -90,7 +79,7 @@ public final class InputValidator {
         return value;
     }
 
-    /** A menu choice from 1 to max. Anything else (letters, blanks, huge numbers) is rejected. */
+    /** Parse a menu choice between 1 and max. */
     public static int menuChoice(String input, int max) throws InvalidInputException {
         String value = input == null ? "" : input.trim();
         if (value.length() == 0 || value.length() > 2 || !value.chars().allMatch(Character::isDigit)) {
@@ -103,13 +92,10 @@ public final class InputValidator {
         return choice;
     }
 
-    /**
-     * Luhn check digit (the same idea used on bank cards). The account generator
-     * in Step 5 uses this to make the 10th digit.
-     */
+    /** Calculate the check digit for a nine-digit account number body. */
     public static int luhnCheckDigit(String nineDigits) {
         int sum = 0;
-        boolean doubleIt = true; // the digit next to the check digit gets doubled
+        boolean doubleIt = true;
         for (int i = nineDigits.length() - 1; i >= 0; i--) {
             int d = nineDigits.charAt(i) - '0';
             if (doubleIt) {

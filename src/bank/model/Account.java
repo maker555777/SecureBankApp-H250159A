@@ -10,14 +10,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.regex.Pattern;
 
-/**
- * Base class for every kind of account.
- *
- * The balance is private and there is no setBalance(): the only way
- * money moves is through deposit() and withdraw(), and both of them
- * validate the amount first. Subclasses only decide HOW MUCH may be
- * taken out (see maxWithdrawable()).
- */
+/** Common account state and money movement rules. */
 public abstract class Account implements Storable {
 
     private static final Pattern NUMBER_FORMAT = Pattern.compile("\\d{10}");
@@ -28,12 +21,12 @@ public abstract class Account implements Storable {
     private final LocalDate openedOn;
     private BigDecimal balance;
 
-    /** Opening a new account: starts at zero today. */
+    /** Create a new account with a zero balance. */
     protected Account(String accountNumber, String ownerUsername) {
         this(accountNumber, ownerUsername, BigDecimal.ZERO.setScale(2), LocalDate.now());
     }
 
-    /** Restoring an account that was loaded from the data file. */
+    /** Restore an account from a stored record. */
     protected Account(String accountNumber, String ownerUsername,
                       BigDecimal balance, LocalDate openedOn) {
         if (accountNumber == null || !NUMBER_FORMAT.matcher(accountNumber).matches()) {
@@ -48,14 +41,14 @@ public abstract class Account implements Storable {
         this.openedOn = openedOn;
     }
 
-    // ---- behaviour that differs between account types ----
+    // Account-type specific rules
 
     public abstract AccountType getType();
 
     /** The most that can leave this account in a single withdrawal. */
     public abstract BigDecimal maxWithdrawable();
 
-    // ---- money movement ----
+    // Money movement
 
     public Transaction deposit(BigDecimal amount) throws BankException {
         BigDecimal value = checkAmount(amount);
@@ -63,7 +56,7 @@ public abstract class Account implements Storable {
         return new Transaction(accountNumber, TransactionType.DEPOSIT, value, balance);
     }
 
-    /** final: no subclass may skip the checks by overriding this. */
+    /** Subclasses cannot bypass the withdrawal checks. */
     public final Transaction withdraw(BigDecimal amount) throws BankException {
         BigDecimal value = checkAmount(amount);
         if (value.compareTo(maxWithdrawable()) > 0) {
@@ -73,7 +66,7 @@ public abstract class Account implements Storable {
         return new Transaction(accountNumber, TransactionType.WITHDRAWAL, value, balance);
     }
 
-    /** Rejects null, zero, negative, over-precise and absurdly large amounts. */
+    /** Validate and normalize a transaction amount. */
     private static BigDecimal checkAmount(BigDecimal amount) throws InvalidInputException {
         if (amount == null) {
             throw new InvalidInputException("Amount is required.");
@@ -91,7 +84,7 @@ public abstract class Account implements Storable {
         return value;
     }
 
-    // ---- persistence ----
+    // Persistence
 
     @Override
     public String toRecord() {
@@ -100,7 +93,7 @@ public abstract class Account implements Storable {
                 balance.toPlainString(), openedOn.toString());
     }
 
-    /** Factory: reads the type column and builds the right subclass. */
+    /** Create the appropriate account subtype from a stored record. */
     public static Account fromRecord(String line) throws InvalidRecordException {
         String[] p = Records.split(line, 5);
         try {
@@ -116,14 +109,14 @@ public abstract class Account implements Storable {
         }
     }
 
-    // ---- getters (no setters on purpose) ----
+    // Getters
 
     public String getAccountNumber() { return accountNumber; }
     public String getOwnerUsername() { return ownerUsername; }
     public LocalDate getOpenedOn() { return openedOn; }
     public BigDecimal getBalance() { return balance; }
 
-    /** For screens and logs: ******7391 instead of the full number. */
+    /** Return a masked number for display and logging. */
     public String getMaskedNumber() {
         return "******" + accountNumber.substring(6);
     }

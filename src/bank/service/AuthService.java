@@ -16,12 +16,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Registration and login.
- *
- * Passwords arrive as char[] and are NOT wiped here: the caller (the console
- * UI) owns the array and clears it as soon as this method returns.
- */
+/** Handles registration and sign-in. The caller clears password arrays after use. */
 public final class AuthService {
 
     private static final String GENERIC_FAILURE = "Invalid username or password.";
@@ -38,7 +33,7 @@ public final class AuthService {
         this.users = new LinkedHashMap<>(store.loadUsers());
     }
 
-    /** Creates a login. Only the salt and hash are stored, never the password. */
+    /** Register a customer and save the password hash. */
     public User register(String usernameInput, char[] password) throws BankException {
         String username = InputValidator.username(usernameInput);
         InputValidator.newPassword(password, username);
@@ -49,7 +44,7 @@ public final class AuthService {
         HashedPassword hashed = PasswordHasher.hash(password);
         User user = new User(username, hashed.salt(), hashed.hash());
 
-        // Save first, remember second: if saving fails, memory and disk still agree.
+        // Update memory only after the file has been saved.
         List<User> updated = new ArrayList<>(users.values());
         updated.add(user);
         store.saveUsers(updated);
@@ -59,16 +54,7 @@ public final class AuthService {
         return user;
     }
 
-    /**
-     * Checks a login. Things done on purpose here:
-     *  - an unknown user and a wrong password give the same message and take
-     *    about the same time (so usernames can't be guessed from the response);
-     *  - the failure count is saved to disk, so restarting the app can't reset it;
-     *  - a locked account is rejected before the password is even looked at.
-     *
-     * Trade-off: telling a user "locked" does confirm that the username exists.
-     * We accept that so a genuine customer knows why they can't get in.
-     */
+    /** Authenticate a customer and persist failed-attempt counts. */
     public User login(String usernameInput, char[] password) throws BankException {
         String username;
         try {

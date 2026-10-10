@@ -1,1 +1,4 @@
 # accounts.txt  type|accountNumber|owner|balance|openedOn
+SAVINGS|5000646686|demo_user|1300.00|2026-10-10
+CURRENT|6389101145|demo_user|274.75|2026-10-10
+SAVINGS|8068297491|mare|44.00|2026-10-10

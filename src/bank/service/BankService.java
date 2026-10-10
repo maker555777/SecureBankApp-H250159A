@@ -21,19 +21,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Everything a signed-in customer can do: open accounts, check a balance,
- * deposit, withdraw, and see recent transactions.
- *
- * Two rules protect the customer:
- *  1. OWNERSHIP. Every method that takes an account number first checks that
- *     the account belongs to the signed-in user. Without this, anyone could
- *     type another customer's number and move their money.
- *  2. SAVE BEFORE COMMIT. A deposit or withdrawal is applied to a COPY of the
- *     account and written to disk. Only if the write succeeds does the copy
- *     replace the real account in memory. A disk error therefore can never
- *     leave the screen showing a balance the file doesn't have.
- */
+/** Banking operations available to a signed-in customer. */
 public final class BankService {
 
     public static final int MAX_ACCOUNTS_PER_USER = 5;
@@ -92,7 +80,7 @@ public final class BankService {
         return ownedAccount(user, accountNumberInput).getBalance();
     }
 
-    /** The most recent transactions for one account, newest first. */
+    /** Return up to limit transactions, newest first. */
     public List<Transaction> recentTransactions(User user, String accountNumberInput, int limit)
             throws BankException {
         Account account = ownedAccount(user, accountNumberInput);
@@ -144,11 +132,7 @@ public final class BankService {
 
     // ---------------- internals ----------------
 
-    /**
-     * Finds an account AND proves it belongs to this user. A number that does
-     * not exist and a number that belongs to someone else give the identical
-     * message, so nobody can use this to discover which numbers are real.
-     */
+    /** Look up an account without revealing whether another user's account exists. */
     private Account ownedAccount(User user, String accountNumberInput) throws BankException {
         String number;
         try {
@@ -168,7 +152,7 @@ public final class BankService {
         return Account.fromRecord(account.toRecord());
     }
 
-    /** Writes the new balance and the transaction; only then updates memory. */
+    /** Save the balance and transaction before updating in-memory state. */
     private void commit(Account original, Account working, Transaction t) throws BankException {
         List<Account> before = new ArrayList<>(accounts.values());
         List<Account> after = new ArrayList<>();
@@ -180,11 +164,11 @@ public final class BankService {
         try {
             store.appendTransaction(t);
         } catch (BankException e) {
-            // The balance file already moved on; put it back so the two files agree.
+            // Restore the previous balance if writing the transaction failed.
             try {
                 store.saveAccounts(before);
             } catch (BankException ignored) {
-                // nothing more we can do; the original error is the one to report
+                // Keep the original write error.
             }
             throw e;
         }
@@ -192,7 +176,7 @@ public final class BankService {
         transactions.add(t);
     }
 
-    /** 9 random digits plus a Luhn check digit; retried in the unlikely event of a clash. */
+    /** Generate a unique 10-digit number with a Luhn check digit. */
     private String newAccountNumber() {
         String number;
         do {

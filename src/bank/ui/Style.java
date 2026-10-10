@@ -1,12 +1,6 @@
 package bank.ui;
 
-/**
- * Everything about how the screen looks: box-drawing characters and colours.
- *
- * Colours are switched off automatically when the output is not a real
- * terminal (an IDE console would print the raw escape codes as junk), and
- * the box characters fall back to plain ASCII with the --ascii flag.
- */
+/** Screen colors and box-drawing characters. */
 final class Style {
 
     private static final String RESET = "\u001B[0m";
@@ -29,7 +23,7 @@ final class Style {
         }
     }
 
-    /** Colour only when we are attached to a real terminal and the user hasn't opted out. */
+    /** Check whether ANSI colors are likely to work in this terminal. */
     static boolean colorSupported() {
         String term = System.getenv("TERM");
         return System.console() != null

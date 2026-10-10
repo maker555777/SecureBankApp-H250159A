@@ -1,1 +1,3 @@
 # users.txt  username|salt|passwordHash|failedAttempts|locked
+demo_user|UtGCgR9zJayTa7sfBe9BCw==|VkcYu4UyemBL73R4qkFZ0hhzPpWFY7snyJOBXE3T2Xo=|3|true
+mare|mFSJZU/bwtPoz9e02Zyg9Q==|FPmQFLYzmxXOXJIjdAep6KplpJqF1AKu2MqswNbzCQI=|0|false
