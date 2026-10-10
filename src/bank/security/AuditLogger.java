@@ -5,6 +5,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.time.LocalDateTime;
 
 /**
@@ -48,9 +49,19 @@ public final class AuditLogger {
             }
             Files.writeString(logFile, line, StandardCharsets.UTF_8,
                     StandardOpenOption.CREATE, StandardOpenOption.APPEND);
+            restrictToOwner(logFile);
         } catch (IOException e) {
             // A broken log must not crash the bank, but it must not be silent either.
             System.err.println("Warning: could not write to the audit log.");
+        }
+    }
+
+    /** Owner-only access (like chmod 600) where the file system supports it; skipped on Windows. */
+    private static void restrictToOwner(Path file) {
+        try {
+            Files.setPosixFilePermissions(file, PosixFilePermissions.fromString("rw-------"));
+        } catch (UnsupportedOperationException | IOException ignored) {
+            // not a POSIX file system, nothing to do
         }
     }
 
