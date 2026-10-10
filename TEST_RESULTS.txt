@@ -1,0 +1,107 @@
+Self-test results - Secure Banking Application (H250159A)
+Run on: 2026-10-10   Command: java -cp out bank.SelfTest
+
+Secure Banking Application - self test
+Working in a temporary folder; your real data is not touched.
+
+Account rules
+  PASS  Savings cannot dip below its 10.00 minimum
+  PASS  Savings allows a withdrawal that leaves exactly 10.00
+  PASS  Current account may use its 200.00 overdraft
+  PASS  Current account refuses to go past the overdraft
+  PASS  Deposit of a negative amount is refused
+  PASS  Deposit of zero is refused
+  PASS  Amount with 3 decimal places is refused
+  PASS  Amount above the per-transaction limit is refused
+  PASS  Missing (null) amount is refused
+  PASS  Account number is masked for display
+
+File records
+  PASS  Account survives a save/load round trip
+  PASS  Transaction survives a save/load round trip
+  PASS  User (with failed-attempt count) survives a round trip
+  PASS  Account line with the wrong number of fields is rejected
+  PASS  Account line with an unknown type is rejected
+  PASS  Account line with a non-numeric balance is rejected
+  PASS  Transaction line with a bad date is rejected
+
+Password hashing
+  PASS  Correct password verifies
+  PASS  Wrong password does not verify
+  PASS  Same password gets a different salt each time
+  PASS  Same password gets a different hash each time
+  PASS  The hash does not contain the password
+  PASS  Damaged stored values just fail to match (no crash)
+
+Input validation
+  PASS  Username is trimmed and lower-cased
+  PASS  Username that is too short is refused
+  PASS  Username containing the | separator is refused
+  PASS  Username containing a line break is refused
+  PASS  Username containing a space is refused
+  PASS  Password without a digit is refused
+  PASS  Password that is too short is refused
+  PASS  Password containing the username is refused
+  PASS  A reasonable password is accepted
+  PASS  Amount '-5' is refused
+  PASS  Amount '0' is refused
+  PASS  Amount '1.234' is refused
+  PASS  Amount '1e5' is refused
+  PASS  Amount '1,000' is refused
+  PASS  Amount '+5' is refused
+  PASS  Amount 'abc' is refused
+  PASS  Amount '' is refused
+  PASS  Amount ' ' is refused
+  PASS  Amount '150.5' becomes 150.50
+  PASS  Account number with a correct check digit is accepted
+  PASS  Account number with a wrong check digit is refused
+  PASS  Account number containing letters is refused
+  PASS  Menu choice outside the range is refused
+  PASS  Menu choice that is not a number is refused
+
+Audit log
+  PASS  A fake line injected through a username stays on one line
+  PASS  Each entry has exactly 4 columns (nothing forged)
+
+Data files
+  PASS  First run with no files loads nothing instead of crashing
+  PASS  User and a still-valid password hash come back after a restart
+  PASS  Account balance comes back after a restart
+  PASS  Transaction history comes back after a restart
+  PASS  No temporary files are left behind after saving
+  PASS  users.txt can be read only by its owner (rw-------)
+  PASS  A damaged data file stops the program from loading it
+  PASS  Two accounts with the same number are rejected
+
+Registration and login
+  PASS  Username is stored in lower case
+  PASS  users.txt does not contain the plain password
+  PASS  Registering the same username twice is refused
+  PASS  Registering with a weak password is refused
+  PASS  Login works and ignores the case of the username
+  PASS  Unknown user and wrong password give the same message
+  PASS  Malformed login input is refused without a crash
+  PASS  The third wrong password locks the account
+  PASS  The correct password is refused while locked
+  PASS  The lock is still in place after a restart
+  PASS  Other users are not affected by someone else's lock
+
+Banking operations
+  PASS  New account number has 10 digits and a valid check digit
+  PASS  Deposit then withdrawal leave the right balance
+  PASS  The receipt shows the balance after the transaction
+  PASS  Withdrawing more than allowed is refused
+  PASS  A refused withdrawal changes nothing
+  PASS  Another user cannot touch your account
+  PASS  'Not yours' and 'does not exist' give the same message
+  PASS  The owner's balance is untouched by the attempt
+  PASS  Opening more than the allowed number of accounts is refused
+  PASS  History lists newest first
+  PASS  Balance is still correct after a restart
+  PASS  History is still there after a restart
+  (next: the disk is broken on purpose, so a 'could not write' warning is expected)
+Warning: could not write to the audit log.
+  PASS  A disk error is reported as a StorageException
+  PASS  After a failed save the balance on screen did NOT change
+
+Result: 82 passed, 0 failed.
